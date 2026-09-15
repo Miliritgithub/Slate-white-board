@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slate — draw together, from anywhere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F9F8F4;
+    --paper-dim:#F1EFE8;
+    --ink:#1D2334;
+    --ink-soft:#4B5165;
+    --line:#DAD6C9;
+    --coral:#E8482C;
+    --coral-dark:#C23A21;
+    --teal:#0F9B8E;
+    --yellow:#F5B700;
+    --blue:#3E6BFF;
+    --sticky-yellow:#FDE8A0;
+    --sticky-pink:#F6C9D9;
+    --sticky-blue:#C6E2F5;
+    --sticky-green:#C9E8C9;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,h2,h3,h4{
+    font-family: 'Archivo', sans-serif;
+    color: var(--ink);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  a { color: inherit; }
+
+  .dotgrid{
+    background-image: radial-gradient(circle, var(--line) 1.4px, transparent 1.4px);
+    background-size: 26px 26px;
+  }
+
+  .wrap{
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  @media (max-width: 640px){
+    .wrap{ padding: 0 20px; }
+  }
+
+  /* ---------- NAV ---------- */
+  header{
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(249,248,244,0.9);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+  .logo{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-family:'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 21px;
+    color: var(--ink);
+    text-decoration:none;
+  }
+  .logo-mark{
+    width: 24px; height: 24px;
+    border: 2.5px solid var(--ink);
+    border-radius: 5px;
+    position: relative;
+    flex-shrink:0;
+  }
+  .logo-mark::after{
+    content:"";
+    position:absolute;
+    left:4px; top: 11px;
+    width: 12px; height: 3px;
+    background: var(--coral);
+    border-radius: 2px;
+    transform: rotate(-18deg);
+  }
+  .nav-links{
+    display:flex;
+    align-items:center;
+    gap: 34px;
+    list-style:none;
+    margin:0; padding:0;
+  }
+  .nav-links a{
+    text-decoration:none;
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    font-weight: 500;
+  }
+  .nav-links a:hover{ color: var(--ink); }
+  .nav-cta{
+    display:flex;
+    align-items:center;
+    gap: 18px;
+  }
+  .nav-login{
+    font-size: 14.5px;
+    font-weight: 500;
+    text-decoration:none;
+    color: var(--ink-soft);
+    display:none;
+  }
+  @media (min-width: 900px){ .nav-login{ display:inline; } }
+
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding: 11px 20px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 14.5px;
+    text-decoration:none;
+    border: none;
+    cursor:pointer;
+    font-family:'Inter', sans-serif;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .btn-primary{
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .btn-primary:hover{ transform: translateY(-1px); box-shadow: 0 6px 16px rgba(29,35,52,0.25); }
+  .btn-ghost{
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+  }
+  .btn-ghost:hover{ background: var(--ink); color: var(--paper); }
+  .btn-coral{
+    background: var(--coral);
+    color: #fff;
+  }
+  .btn-coral:hover{ transform: translateY(-1px); box-shadow: 0 8px 20px rgba(232,72,44,0.35); }
+
+  /* ---------- SCROLL PROGRESS ---------- */
+  .scroll-progress{
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    width: 0%;
+    background: var(--coral);
+    z-index: 100;
+    transition: width 80ms linear;
+  }
+
+  /* ---------- MOBILE NAV ---------- */
+  .mobile-nav-toggle{
+    display:none;
+    background:none;
+    border: 1.5px solid var(--ink);
+    border-radius: 7px;
+    width: 38px; height:34px;
+    align-items:center; justify-content:center;
+    cursor:pointer;
+    flex-direction:column;
+    gap:4px;
+  }
+  .mobile-nav-toggle span{
+    display:block;
+    width:16px; height:2px;
+    background: var(--ink);
+    border-radius:2px;
+    transition: transform .2s ease, opacity .2s ease;
+  }
+  .mobile-nav-toggle.is-open span:nth-child(1){ transform: translateY(6px) rotate(45deg); }
+  .mobile-nav-toggle.is-open span:nth-child(2){ opacity:0; }
+  .mobile-nav-toggle.is-open span:nth-child(3){ transform: translateY(-6px) rotate(-45deg); }
+
+  .mobile-panel{
+    display:none;
+    max-height:0;
+    overflow:hidden;
+    transition: max-height .28s ease;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .mobile-panel.is-open{ max-height: 320px; }
+  .mobile-panel ul{
+    list-style:none; margin:0; padding: 6px 32px 20px;
+    display:flex; flex-direction:column; gap: 4px;
+  }
+  .mobile-panel a{
+    display:block;
+    padding: 12px 4px;
+    text-decoration:none;
+    color: var(--ink);
+    font-weight:600;
+    font-size:15px;
+    border-bottom: 1px solid var(--line);
+  }
+  .mobile-panel .btn{ margin-top:12px; width:100%; }
+
+  @media (max-width: 800px){
+    .nav-links{ display:none; }
+    .mobile-nav-toggle{ display:flex; }
+    .mobile-panel{ display:block; }
+  }
+
+  /* ---------- BOARD TOOLBAR (draw feature) ---------- */
+  .board-toolbar{
+    position:absolute;
+    top: 14px; right: 14px;
+    z-index: 6;
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid var(--line);
+    border-radius: 30px;
+    padding: 6px 8px;
+  }
+  .pen-color{
+    width: 20px; height:20px;
+    border-radius:50%;
+    border: 2px solid transparent;
+    cursor:pointer;
+    padding:0;
+  }
+  .pen-color.is-selected{ border-color: var(--ink); }
+  .pen-clear{
+    font-size: 11.5px;
+    font-weight:600;
+    color: var(--ink-soft);
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding: 4px 6px;
+  }
+  .pen-clear:hover{ color: var(--ink); }
+  .draw-layer{ position:absolute; inset:0; z-index:4; cursor: crosshair; }
+
+  /* ---------- SCROLL REVEAL ---------- */
+  .reveal{
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .reveal.in-view{ opacity:1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce){
+    .reveal{ opacity:1; transform:none; transition:none; }
+  }
+
+  /* ---------- FAQ ---------- */
+  .faq-list{ max-width: 720px; margin: 0 auto; }
+  .faq-item{
+    border-bottom: 1px solid var(--line);
+  }
+  .faq-q{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 16px;
+    background:none;
+    border:none;
+    text-align:left;
+    padding: 22px 4px;
+    cursor:pointer;
+    font-family:'Archivo', sans-serif;
+    font-size: 17px;
+    font-weight:700;
+    color: var(--ink);
+  }
+  .faq-q .plus{
+    flex-shrink:0;
+    width: 22px; height:22px;
+    position:relative;
+  }
+  .faq-q .plus::before, .faq-q .plus::after{
+    content:"";
+    position:absolute;
+    background: var(--ink);
+    border-radius:2px;
+    transition: transform .2s ease;
+  }
+  .faq-q .plus::before{ left:0; top:50%; width:100%; height:2.4px; transform: translateY(-50%); }
+  .faq-q .plus::after{ top:0; left:50%; width:2.4px; height:100%; transform: translateX(-50%); }
+  .faq-item.is-open .faq-q .plus::after{ transform: translateX(-50%) rotate(90deg); opacity:0; }
+  .faq-a{
+    max-height:0;
+    overflow:hidden;
+    transition: max-height .3s ease;
+  }
+  .faq-a p{
+    margin: 0 4px 22px;
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    max-width: 560px;
+  }
+
+  /* ---------- PRICING TOGGLE ---------- */
+  .price-toggle{
+    display:inline-flex;
+    align-items:center;
+    gap: 12px;
+    margin-bottom: 34px;
+  }
+  .price-toggle span{ font-size:14.5px; font-weight:600; color: var(--ink-soft); }
+  .price-toggle span.is-active{ color: var(--ink); }
+  .toggle-switch{
+    width: 46px; height: 26px;
+    border-radius: 20px;
+    background: var(--ink);
+    border: none;
+    position:relative;
+    cursor:pointer;
+    padding:0;
+    flex-shrink:0;
+  }
+  .toggle-switch::after{
+    content:"";
+    position:absolute;
+    top:3px; left:3px;
+    width:20px; height:20px;
+    border-radius:50%;
+    background:#fff;
+    transition: transform .2s ease;
+  }
+  .toggle-switch.is-yearly::after{ transform: translateX(20px); }
+  .save-badge{
+    font-size: 11.5px;
+    font-weight:700;
+    color: var(--teal);
+    background: rgba(15,155,142,0.12);
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding: 76px 0 40px;
+  }
+  .hero-inner{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    text-align:center;
+    align-items:center;
+  }
+  .eyebrow-hand{
+    font-family:'Kalam', cursive;
+    color: var(--coral);
+    font-size: 18px;
+    font-weight: 700;
+    transform: rotate(-2deg);
+    display:inline-block;
+  }
+  h1.hero-title{
+    font-size: clamp(38px, 6vw, 66px);
+    font-weight: 800;
+    line-height: 1.05;
+    max-width: 780px;
+    margin: 10px auto 0;
+  }
+  .hero-title .underline-coral{
+    position:relative;
+    white-space: nowrap;
+  }
+  .hero-title .underline-coral svg{
+    position:absolute;
+    left:-2%;
+    bottom:-6px;
+    width:104%;
+    height: 16px;
+  }
+  .hero-sub{
+    max-width: 560px;
+    margin: 18px auto 0;
+    font-size: 18px;
+    color: var(--ink-soft);
+  }
+  .hero-ctas{
+    margin-top: 30px;
+    display:flex;
+    gap: 14px;
+    justify-content:center;
+    flex-wrap: wrap;
+  }
+  .hero-ctas .btn{ padding: 14px 26px; font-size: 15.5px; }
+
+  /* ---------- HERO BOARD DEMO ---------- */
+  .board-shell{
+    margin: 56px auto 0;
+    max-width: 980px;
+    border: 2px solid var(--ink);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 10px 10px 0 var(--ink);
+    overflow: hidden;
+  }
+  .board-topbar{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 2px solid var(--ink);
+    background: var(--paper-dim);
+  }
+  .board-dots{ display:flex; gap:7px; }
+  .board-dots span{
+    width:11px; height:11px; border-radius:50%;
+    border: 1.5px solid var(--ink);
+    display:block;
+  }
+  .board-dots span:nth-child(1){ background: var(--coral); }
+  .board-dots span:nth-child(2){ background: var(--yellow); }
+  .board-dots span:nth-child(3){ background: var(--teal); }
+  .board-share{
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .board-avatars{ display:flex; }
+  .board-avatars span{
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700; color:#fff;
+    border: 2px solid var(--paper-dim);
+    margin-left:-7px;
+  }
+  .board-canvas{
+    position:relative;
+    height: 420px;
+    background: #fff;
+    background-image: radial-gradient(circle, #E7E4D8 1.3px, transparent 1.3px);
+    background-size: 22px 22px;
+    cursor: crosshair;
+    overflow:hidden;
+  }
+  @media (max-width: 640px){ .board-canvas{ height: 320px; } }
+
+  .sticky{
+    position:absolute;
+    width: 108px;
+    padding: 10px 11px;
+    font-family:'Kalam', cursive;
+    font-size: 13px;
+    line-height: 1.3;
+    color: var(--ink);
+    box-shadow: 3px 4px 0 rgba(0,0,0,0.08);
+    border-radius: 2px;
+  }
+  .sticky.yellow{ background: var(--sticky-yellow); }
+  .sticky.pink{ background: var(--sticky-pink); }
+  .sticky.blue{ background: var(--sticky-blue); }
+
+  .cursor{
+    position:absolute;
+    display:flex;
+    align-items:flex-start;
+    gap:0;
+    pointer-events:none;
+    transition: top 2.4s cubic-bezier(.4,0,.2,1), left 2.4s cubic-bezier(.4,0,.2,1);
+  }
+  .cursor svg{ display:block; filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.15)); }
+  .cursor-label{
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space:nowrap;
+    margin-left: 10px;
+    margin-top: 12px;
+    font-family:'Inter', sans-serif;
+  }
+
+  .ink-trail{
+    position:absolute;
+    width:7px; height:7px;
+    border-radius:50%;
+    background: var(--coral);
+    pointer-events:none;
+    opacity: 0.55;
+    transform: translate(-50%,-50%);
+    animation: fadeout 900ms ease forwards;
+  }
+  @keyframes fadeout{
+    to{ opacity:0; transform: translate(-50%,-50%) scale(0.4); }
+  }
+
+  .board-hint{
+    position:absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    background: rgba(249,248,244,0.9);
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    pointer-events:none;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .cursor{ transition:none; }
+    .ink-trail{ animation:none; opacity:0; }
+  }
+
+  /* ---------- ROLES BAND ---------- */
+  .roles{
+    padding: 46px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .roles-inner{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 14px;
+    flex-wrap:wrap;
+    text-align:center;
+  }
+  .roles-label{
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin-right: 8px;
+  }
+  .role-chip{
+    font-size: 14px;
+    font-weight: 600;
+    padding: 7px 15px;
+    border: 1.5px solid var(--line);
+    border-radius: 20px;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- SECTION HEADERS ---------- */
+  .section{ padding: 96px 0; }
+  .section-head{
+    max-width: 620px;
+    margin-bottom: 54px;
+  }
+  .section-head h2{
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 800;
+    line-height:1.15;
+  }
+  .section-head p{
+    margin-top:14px;
+    font-size: 17px;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- FEATURES (sticky note grid) ---------- */
+  .feature-grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 26px;
+  }
+  @media (max-width: 900px){ .feature-grid{ grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 620px){ .feature-grid{ grid-template-columns: 1fr; } }
+
+  .feature-card{
+    padding: 26px 22px;
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--ink);
+    background: #fff;
+    box-shadow: 5px 5px 0 var(--ink);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .feature-card:hover{
+    transform: translate(-2px,-2px);
+    box-shadow: 7px 7px 0 var(--ink);
+  }
+  .feature-card .ic{
+    width: 40px; height:40px;
+    border-radius: 9px;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom: 18px;
+  }
+  .feature-card h3{ font-size: 18px; font-weight:700; margin-bottom:8px; }
+  .feature-card p{ font-size: 14.5px; color: var(--ink-soft); margin:0; }
+
+  .ic-coral{ background: var(--coral); }
+  .ic-teal{ background: var(--teal); }
+  .ic-yellow{ background: var(--yellow); }
+  .ic-blue{ background: var(--blue); }
+  .ic-ink{ background: var(--ink); }
+
+  /* ---------- HOW IT WORKS ---------- */
+  .steps{
+    display:grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 0;
+    position:relative;
+  }
+  @media (max-width: 900px){ .steps{ grid-template-columns: repeat(2,1fr); gap: 40px 24px; } }
+  @media (max-width: 560px){ .steps{ grid-template-columns: 1fr; } }
+
+  .step{
+    position:relative;
+    padding-right: 26px;
+  }
+  .step-num{
+    font-family:'Archivo', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    width: 30px; height:30px;
+    border-radius:50%;
+    border: 2px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom: 20px;
+  }
+  .step h3{ font-size: 17px; margin-bottom: 8px; }
+  .step p{ font-size: 14.5px; color: var(--ink-soft); margin:0; }
+  .step-arrow{
+    position:absolute;
+    top: 13px;
+    right: -14px;
+    color: var(--line);
+  }
+  @media (max-width: 900px){ .step-arrow{ display:none; } }
+
+  /* ---------- USE CASES ---------- */
+  .usecase-row{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 900px){ .usecase-row{ grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 560px){ .usecase-row{ grid-template-columns: 1fr; } }
+  .usecase{
+    padding: 22px;
+    background: var(--paper-dim);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+  }
+  .usecase h4{ font-size: 15.5px; margin-bottom: 6px; }
+  .usecase p{ font-size: 13.5px; color: var(--ink-soft); margin:0; }
+
+  /* ---------- TESTIMONIALS ---------- */
+  .testimonial-grid{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 24px;
+  }
+  @media (max-width: 900px){ .testimonial-grid{ grid-template-columns: 1fr; } }
+  .testimonial{
+    background:#fff;
+    border-radius: 4px;
+    padding: 24px 22px 20px;
+    position:relative;
+    box-shadow: 4px 4px 0 rgba(29,35,52,0.08);
+  }
+  .testimonial:nth-child(1){ background: var(--sticky-yellow); transform: rotate(-1.2deg); }
+  .testimonial:nth-child(2){ background: var(--sticky-blue); transform: rotate(0.8deg); }
+  .testimonial:nth-child(3){ background: var(--sticky-green); transform: rotate(-0.6deg); }
+  .testimonial p.quote{
+    font-family:'Kalam', cursive;
+    font-size: 16.5px;
+    line-height: 1.5;
+    color: var(--ink);
+    margin: 0 0 16px;
+  }
+  .testimonial .who{
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-soft);
+  }
+  .testimonial .who span{ font-weight: 500; }
+
+  /* ---------- PRICING ---------- */
+  .pricing-grid{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 22px;
+    align-items: stretch;
+  }
+  @media (max-width: 900px){ .pricing-grid{ grid-template-columns: 1fr; } }
+  .price-card{
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius-md);
+    padding: 30px 26px;
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+  }
+  .price-card.featured{
+    background: var(--ink);
+    color: var(--paper);
+    box-shadow: 6px 6px 0 var(--coral);
+  }
+  .price-card.featured h3, .price-card.featured .price{ color:#fff; }
+  .price-card.featured p{ color: #C6C9D6; }
+  .price-card.featured .plan-tag{ background: var(--coral); color:#fff; }
+  .plan-tag{
+    display:inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--paper-dim);
+    color: var(--ink-soft);
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    width: fit-content;
+  }
+  .price-card h3{ font-size: 20px; margin-bottom: 6px; }
+  .price-card .price{
+    font-family:'Archivo', sans-serif;
+    font-size: 38px;
+    font-weight: 800;
+    margin: 6px 0 4px;
+  }
+  .price-card .price small{ font-size:14px; font-weight:500; }
+  .price-card p.desc{ font-size: 14px; color: var(--ink-soft); margin: 0 0 22px; }
+  .price-card ul{
+    list-style:none;
+    padding:0; margin: 0 0 26px;
+    display:flex; flex-direction:column;
+    gap: 11px;
+    flex-grow:1;
+  }
+  .price-card li{
+    font-size: 14px;
+    display:flex;
+    align-items:flex-start;
+    gap: 9px;
+  }
+  .price-card li svg{ flex-shrink:0; margin-top:3px; }
+  .price-card .btn{ width:100%; }
+
+  /* ---------- FINAL CTA ---------- */
+  .cta-band{
+    padding: 90px 0;
+    text-align:center;
+    border-top: 1px solid var(--line);
+  }
+  .cta-band h2{
+    font-size: clamp(30px, 5vw, 48px);
+    font-weight: 800;
+  }
+  .cta-band p{
+    color: var(--ink-soft);
+    font-size: 17px;
+    margin: 14px 0 30px;
+  }
+  .marker-icon{
+    display:block;
+    margin: 0 auto 18px;
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    background: var(--ink);
+    color: #C6C9D6;
+    padding: 60px 0 30px;
+  }
+  .footer-grid{
+    display:grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 32px;
+    padding-bottom: 44px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+  }
+  @media (max-width: 700px){ .footer-grid{ grid-template-columns: 1fr 1fr; } }
+  .footer-logo{
+    display:flex; align-items:center; gap:9px;
+    font-family:'Archivo', sans-serif;
+    font-weight:800; font-size:19px; color:#fff;
+    margin-bottom: 12px;
+  }
+  .footer-logo .logo-mark{ border-color:#fff; }
+  .footer-logo .logo-mark::after{ background: var(--coral); }
+  .footer-col h5{
+    font-size: 13px;
+    color: #8A8FA3;
+    margin: 0 0 14px;
+    font-weight:600;
+  }
+  .footer-col ul{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
+  .footer-col a{ color:#C6C9D6; text-decoration:none; font-size:14px; }
+  .footer-col a:hover{ color:#fff; }
+  .footer-bottom{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-top: 26px;
+    font-size: 13px;
+    color: #8A8FA3;
+    flex-wrap:wrap;
+    gap: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<header>
+  <nav class="nav">
+    <a href="#top" class="logo"><span class="logo-mark"></span>Slate</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#usecases">Use cases</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="#" class="nav-login">Log in</a>
+      <a href="#pricing" class="btn btn-primary">Start drawing free</a>
+      <button class="mobile-nav-toggle" id="mobileToggle" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+  <div class="mobile-panel" id="mobilePanel">
+    <ul>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#usecases">Use cases</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#" class="btn btn-primary">Start drawing free</a></li>
+    </ul>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-inner">
+        <span class="eyebrow-hand">still my favorite way to think</span>
+        <h1 class="hero-title">
+          Think out loud,
+          <span class="underline-coral">together<svg viewBox="0 0 200 16" preserveAspectRatio="none"><path d="M2 12 C 50 4, 150 4, 198 11" stroke="#E8482C" stroke-width="4" fill="none" stroke-linecap="round"/></svg></span>.
+        </h1>
+        <p class="hero-sub">Slate is a real-time whiteboard where your team sketches, plans, and builds ideas live — in the same space, from anywhere.</p>
+        <div class="hero-ctas">
+          <a href="#pricing" class="btn btn-coral">Start drawing — it's free</a>
+          <a href="#demo" class="btn btn-ghost">See it move ↓</a>
+        </div>
+      </div>
+
+      <div class="board-shell" id="demo">
+        <div class="board-topbar">
+          <div class="board-dots"><span></span><span></span><span></span></div>
+          <div class="board-share">
+            <div class="board-avatars">
+              <span style="background:#E8482C">M</span>
+              <span style="background:#0F9B8E">R</span>
+              <span style="background:#3E6BFF">J</span>
+            </div>
+            board / sprint-planning
+          </div>
+        </div>
+        <div class="board-canvas" id="boardCanvas">
+          <div class="board-toolbar">
+            <button class="pen-color is-selected" style="background:#1D2334;" data-color="#1D2334" aria-label="Ink"></button>
+            <button class="pen-color" style="background:#E8482C;" data-color="#E8482C" aria-label="Coral"></button>
+            <button class="pen-color" style="background:#0F9B8E;" data-color="#0F9B8E" aria-label="Teal"></button>
+            <button class="pen-color" style="background:#3E6BFF;" data-color="#3E6BFF" aria-label="Blue"></button>
+            <button class="pen-color" style="background:#F5B700;" data-color="#F5B700" aria-label="Yellow"></button>
+            <button class="pen-clear" id="clearDraw">Clear</button>
+          </div>
+          <canvas class="draw-layer" id="drawLayer"></canvas>
+          <svg width="100%" height="100%" style="position:absolute;inset:0;pointer-events:none;">
+            <path d="M 90 90 Q 220 40 340 100" stroke="#1D2334" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <path d="M 340 100 L 328 92 M 340 100 L 330 112" stroke="#1D2334" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <rect x="420" y="60" width="120" height="66" rx="8" fill="none" stroke="#3E6BFF" stroke-width="2.5"/>
+            <circle cx="620" cy="200" r="34" fill="none" stroke="#0F9B8E" stroke-width="2.5"/>
+            <path d="M 470 230 Q 560 260 660 235" stroke="#F5B700" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </svg>
+
+          <div class="sticky yellow" style="top:150px; left:60px; transform:rotate(-4deg);">ship v1 by fri</div>
+          <div class="sticky pink" style="top:230px; left:270px; transform:rotate(3deg);">who owns QA?</div>
+          <div class="sticky blue" style="top:70px; left:620px; transform:rotate(-2deg);">demo Thurs 2pm</div>
+
+          <div class="cursor" id="cursorMaya" style="top:120px; left:150px;">
+            <svg width="18" height="22" viewBox="0 0 18 22"><path d="M1 1 L1 18 L6 14 L9.5 21 L12.5 19.5 L9 12.5 L16 12 Z" fill="#E8482C"/></svg>
+            <span class="cursor-label" style="background:#E8482C;">Maya</span>
+          </div>
+          <div class="cursor" id="cursorRen" style="top:260px; left:400px;">
+            <svg width="18" height="22" viewBox="0 0 18 22"><path d="M1 1 L1 18 L6 14 L9.5 21 L12.5 19.5 L9 12.5 L16 12 Z" fill="#0F9B8E"/></svg>
+            <span class="cursor-label" style="background:#0F9B8E;">Ren</span>
+          </div>
+          <div class="cursor" id="cursorJad" style="top:80px; left:520px;">
+            <svg width="18" height="22" viewBox="0 0 18 22"><path d="M1 1 L1 18 L6 14 L9.5 21 L12.5 19.5 L9 12.5 L16 12 Z" fill="#3E6BFF"/></svg>
+            <span class="cursor-label" style="background:#3E6BFF;">Jad</span>
+          </div>
+
+          <div class="board-hint">move your mouse — you're on the board too</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROLES -->
+  <section class="roles">
+    <div class="wrap roles-inner">
+      <span class="roles-label">Built for teams who think in pictures:</span>
+      <span class="role-chip">Product</span>
+      <span class="role-chip">Design</span>
+      <span class="role-chip">Engineering</span>
+      <span class="role-chip">Education</span>
+      <span class="role-chip">Remote teams</span>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Everything happens at once, for everyone</h2>
+        <p>No refreshing, no "final_v3" files. What you draw, everyone sees — as you draw it.</p>
+      </div>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="ic ic-coral">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 2 L2 15 L6 12 L8.5 18 L10.8 17 L8.3 11 L14 10.5 Z" fill="white"/></svg>
+          </div>
+          <h3>Live cursors & presence</h3>
+          <p>See exactly where your teammates are on the board, what they're pointing at, and what they're about to change.</p>
+        </div>
+        <div class="feature-card">
+          <div class="ic ic-teal">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="2" stroke="white" stroke-width="1.8"/><path d="M3 10h14M10 3v14" stroke="white" stroke-width="1.8"/></svg>
+          </div>
+          <h3>An infinite canvas</h3>
+          <p>Zoom out for the big picture, zoom into the detail. There's always more room — the board grows with the idea.</p>
+        </div>
+        <div class="feature-card">
+          <div class="ic ic-yellow">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 17 L3 13 L13 3 L17 7 L7 17 Z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Ink, shapes & sticky notes</h3>
+          <p>Freehand pen, clean shapes, and notes you can drag around — the tools your hands already know how to use.</p>
+        </div>
+        <div class="feature-card">
+          <div class="ic ic-blue">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3 A7 7 0 1 1 3.5 8" stroke="white" stroke-width="1.8" fill="none"/><path d="M3 3 L3.5 8 L8.5 7.5" stroke="white" stroke-width="1.8" fill="none" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Instant replay</h3>
+          <p>Scrub back through a session and watch the idea take shape, stroke by stroke — great for catching up latecomers.</p>
+        </div>
+        <div class="feature-card">
+          <div class="ic ic-ink">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 4h14v9H8l-4 3.5V13H3Z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Comments without the interruption</h3>
+          <p>Drop a note next to a shape instead of a Slack message. It stays with the idea, not buried in a channel.</p>
+        </div>
+        <div class="feature-card">
+          <div class="ic ic-coral">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8 12 L12 8 M8 5 L5 8 A3 3 0 0 0 9 12 M12 15 L15 12 A3 3 0 0 0 11 8" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <h3>One link to share</h3>
+          <p>Send the link and anyone can join and start drawing — no account, no download, no waiting on an invite.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section dotgrid" id="how" style="background: var(--paper-dim); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>From blank board to shared plan in four steps</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Open a board</h3>
+          <p>Start from a blank canvas or a template for retros, sprints, or lesson plans.</p>
+          <span class="step-arrow"><svg width="24" height="10" viewBox="0 0 24 10"><path d="M0 5h20M15 1l5 4-5 4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></span>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Share the link</h3>
+          <p>Anyone with it can join and draw instantly — no sign-up required for guests.</p>
+          <span class="step-arrow"><svg width="24" height="10" viewBox="0 0 24 10"><path d="M0 5h20M15 1l5 4-5 4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></span>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Sketch together</h3>
+          <p>Everyone's cursor, ink, and edits sync live — no locking, no waiting your turn.</p>
+          <span class="step-arrow"><svg width="24" height="10" viewBox="0 0 24 10"><path d="M0 5h20M15 1l5 4-5 4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg></span>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3>Wrap up & export</h3>
+          <p>Save the board as a PDF or image, or just leave it running for next time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section class="section" id="usecases">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>One board, a dozen ways to use it</h2>
+      </div>
+      <div class="usecase-row">
+        <div class="usecase">
+          <h4>Sprint planning</h4>
+          <p>Map the backlog, size the work, and see who's picking up what.</p>
+        </div>
+        <div class="usecase">
+          <h4>Design critique</h4>
+          <p>Drop mockups on the board and mark up feedback in real time.</p>
+        </div>
+        <div class="usecase">
+          <h4>Classroom lessons</h4>
+          <p>Sketch a concept live and let students annotate right alongside it.</p>
+        </div>
+        <div class="usecase">
+          <h4>Workshops & retros</h4>
+          <p>Sticky-note brainstorms and dot-voting, without the physical notes.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="section" style="background: var(--paper-dim); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Teams that moved their thinking onto Slate</h2>
+      </div>
+      <div class="testimonial-grid">
+        <div class="testimonial">
+          <p class="quote">"Our design reviews used to be screenshots in a Slack thread. Now everyone's actually drawing on the same page."</p>
+          <div class="who">Priya Nair <span>— Product Design Lead</span></div>
+        </div>
+        <div class="testimonial">
+          <p class="quote">"I run retros with a distributed team across four time zones. Slate is the closest thing to being in one room."</p>
+          <div class="who">Tomas Herrera <span>— Engineering Manager</span></div>
+        </div>
+        <div class="testimonial">
+          <p class="quote">"My students annotate the board mid-lecture instead of raising their hands. It's changed how the class talks."</p>
+          <div class="who">Alina Kovač <span>— High School Teacher</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="section" id="pricing">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Simple pricing, no seat-counting headaches</h2>
+        <p>Start free. Upgrade when your team outgrows it.</p>
+      </div>
+      <div class="price-toggle">
+        <span class="is-active" id="labelMonthly">Monthly</span>
+        <button class="toggle-switch" id="priceToggle" aria-label="Toggle yearly pricing"></button>
+        <span id="labelYearly">Yearly</span>
+        <span class="save-badge">Save 20%</span>
+      </div>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <span class="plan-tag">Free</span>
+          <h3>Personal</h3>
+          <div class="price">$0</div>
+          <p class="desc">For trying Slate out or keeping a personal sketchpad.</p>
+          <ul>
+            <li>✓ 3 active boards</li>
+            <li>✓ Unlimited guest collaborators</li>
+            <li>✓ 7-day version history</li>
+            <li>✓ Export to PNG</li>
+          </ul>
+          <a href="#" class="btn btn-ghost">Start for free</a>
+        </div>
+        <div class="price-card featured">
+          <span class="plan-tag">Most popular</span>
+          <h3>Team</h3>
+          <div class="price" id="teamPrice">$9<small>/user/mo</small></div>
+          <p class="desc">For teams that run planning, reviews, and retros on Slate.</p>
+          <ul>
+            <li>✓ Unlimited boards</li>
+            <li>✓ Unlimited version history</li>
+            <li>✓ Instant replay & scrubbing</li>
+            <li>✓ Templates library</li>
+            <li>✓ Export to PDF & PNG</li>
+          </ul>
+          <a href="#" class="btn btn-coral">Start free trial</a>
+        </div>
+        <div class="price-card">
+          <span class="plan-tag">Enterprise</span>
+          <h3>Organization</h3>
+          <div class="price">Custom</div>
+          <p class="desc">For larger orgs that need control, security, and support.</p>
+          <ul>
+            <li>✓ SSO & SCIM provisioning</li>
+            <li>✓ Admin & audit controls</li>
+            <li>✓ Dedicated onboarding</li>
+            <li>✓ Priority support</li>
+          </ul>
+          <a href="#" class="btn btn-ghost">Talk to sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section" id="faq" style="background: var(--paper-dim); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+    <div class="wrap">
+      <div class="section-head" style="margin-left:auto; margin-right:auto; text-align:center;">
+        <h2>Questions, answered</h2>
+      </div>
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-q"><span>Do guests need an account to join a board?</span><span class="plus"></span></button>
+          <div class="faq-a"><p>No. Anyone with the link can open the board and start drawing right away. Accounts are only needed to create and own boards.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q"><span>How many people can be on a board at once?</span><span class="plus"></span></button>
+          <div class="faq-a"><p>The Free plan supports small groups comfortably. Team and Organization plans remove the practical limits for larger workshops and classes.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q"><span>Can I export a board when we're done?</span><span class="plus"></span></button>
+          <div class="faq-a"><p>Yes — export any board to PNG on the Free plan, or to PDF and PNG on Team and Organization plans. You can also just leave a board running for next time.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q"><span>Does Slate work on tablets and touchscreens?</span><span class="plus"></span></button>
+          <div class="faq-a"><p>Yes. Drawing, sticky notes, and shapes all work with touch and stylus input, so a board works the same whether you're on a laptop or a tablet.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="cta-band">
+    <div class="wrap">
+      <svg class="marker-icon" width="46" height="46" viewBox="0 0 46 46" fill="none"><path d="M8 38 L8 26 L28 6 L40 18 L20 38 Z" fill="#E8482C" stroke="#1D2334" stroke-width="2"/><path d="M8 26 L20 38" stroke="#1D2334" stroke-width="2"/></svg>
+      <h2>Grab a marker.</h2>
+      <p>Your next good idea is better sketched with someone else.</p>
+      <a href="#" class="btn btn-primary" style="padding:15px 30px; font-size:16px;">Start drawing — it's free</a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo"><span class="logo-mark"></span>Slate</div>
+        <p style="font-size:14px; color:#8A8FA3; max-width:240px;">A real-time whiteboard for teams who think better out loud.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Product</h5>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#">Templates</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Blog</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Terms</a></li>
+          <li><a href="#">Security</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Slate. All rights reserved.</span>
+      <span>Made for people who think better with a marker in hand.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Loop the three demo cursors to new spots on the hero board, one orchestrated cycle.
+  (function(){
+    var canvas = document.getElementById('boardCanvas');
+    if(!canvas) return;
+    var cursors = [
+      { el: document.getElementById('cursorMaya'), spots: [[120,150],[260,340],[90,480]] },
+      { el: document.getElementById('cursorRen'),  spots: [[260,400],[300,180],[220,560]] },
+      { el: document.getElementById('cursorJad'),  spots: [[80,520],[240,300],[100,650]] }
+    ];
+    var i = 0;
+    function step(){
+      cursors.forEach(function(c){
+        var spot = c.spots[i % c.spots.length];
+        if(c.el){ c.el.style.top = spot[0] + 'px'; c.el.style.left = spot[1] + 'px'; }
+      });
+      i++;
+    }
+    step();
+    if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      setInterval(step, 2600);
+    }
+
+    // Leave a soft ink trail behind the visitor's own mouse when just hovering — you're "on the board" too.
+    var last = 0;
+    canvas.addEventListener('mousemove', function(e){
+      if(isDrawing) return;
+      var now = Date.now();
+      if(now - last < 45) return;
+      last = now;
+      var rect = canvas.getBoundingClientRect();
+      var dot = document.createElement('div');
+      dot.className = 'ink-trail';
+      dot.style.left = (e.clientX - rect.left) + 'px';
+      dot.style.top = (e.clientY - rect.top) + 'px';
+      canvas.appendChild(dot);
+      setTimeout(function(){ dot.remove(); }, 950);
+    });
+
+    // ---- Real freehand drawing on the board ----
+    var drawCanvas = document.getElementById('drawLayer');
+    var ctx = drawCanvas.getContext('2d');
+    var isDrawing = false;
+    var currentColor = '#1D2334';
+
+    function sizeDrawCanvas(){
+      var rect = canvas.getBoundingClientRect();
+      var prev = drawCanvas.toDataURL ? null : null;
+      drawCanvas.width = rect.width;
+      drawCanvas.height = rect.height;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 3;
+    }
+    sizeDrawCanvas();
+    window.addEventListener('resize', sizeDrawCanvas);
+
+    function getPos(e){
+      var rect = drawCanvas.getBoundingClientRect();
+      var point = e.touches ? e.touches[0] : e;
+      return { x: point.clientX - rect.left, y: point.clientY - rect.top };
+    }
+    function startDraw(e){
+      isDrawing = true;
+      var p = getPos(e);
+      ctx.strokeStyle = currentColor;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+    }
+    function moveDraw(e){
+      if(!isDrawing) return;
+      e.preventDefault();
+      var p = getPos(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    }
+    function endDraw(){ isDrawing = false; }
+
+    drawCanvas.addEventListener('mousedown', startDraw);
+    drawCanvas.addEventListener('mousemove', moveDraw);
+    window.addEventListener('mouseup', endDraw);
+    drawCanvas.addEventListener('touchstart', startDraw, { passive:true });
+    drawCanvas.addEventListener('touchmove', moveDraw, { passive:false });
+    drawCanvas.addEventListener('touchend', endDraw);
+
+    document.querySelectorAll('.pen-color').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.pen-color').forEach(function(b){ b.classList.remove('is-selected'); });
+        btn.classList.add('is-selected');
+        currentColor = btn.dataset.color;
+      });
+    });
+    document.getElementById('clearDraw').addEventListener('click', function(){
+      ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    });
+  })();
+
+  // ---- Scroll progress bar ----
+  (function(){
+    var bar = document.getElementById('scrollProgress');
+    function update(){
+      var h = document.documentElement;
+      var scrolled = h.scrollTop;
+      var max = h.scrollHeight - h.clientHeight;
+      bar.style.width = (max > 0 ? (scrolled / max) * 100 : 0) + '%';
+    }
+    document.addEventListener('scroll', update, { passive:true });
+    update();
+  })();
+
+  // ---- Mobile nav ----
+  (function(){
+    var toggle = document.getElementById('mobileToggle');
+    var panel = document.getElementById('mobilePanel');
+    toggle.addEventListener('click', function(){
+      var open = panel.classList.toggle('is-open');
+      toggle.classList.toggle('is-open', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    panel.querySelectorAll('a').forEach(function(a){
+      a.addEventListener('click', function(){
+        panel.classList.remove('is-open');
+        toggle.classList.remove('is-open');
+      });
+    });
+  })();
+
+  // ---- Reveal on scroll ----
+  (function(){
+    var targets = document.querySelectorAll(
+      '.feature-card, .step, .usecase, .testimonial, .price-card, .faq-item'
+    );
+    targets.forEach(function(el){ el.classList.add('reveal'); });
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)){
+      targets.forEach(function(el){ el.classList.add('in-view'); });
+      return;
+    }
+    var observer = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          entry.target.classList.add('in-view');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    targets.forEach(function(el){ observer.observe(el); });
+  })();
+
+  // ---- FAQ accordion ----
+  (function(){
+    document.querySelectorAll('.faq-item').forEach(function(item){
+      var q = item.querySelector('.faq-q');
+      var a = item.querySelector('.faq-a');
+      q.addEventListener('click', function(){
+        var isOpen = item.classList.contains('is-open');
+        document.querySelectorAll('.faq-item').forEach(function(other){
+          other.classList.remove('is-open');
+          other.querySelector('.faq-a').style.maxHeight = null;
+        });
+        if(!isOpen){
+          item.classList.add('is-open');
+          a.style.maxHeight = a.scrollHeight + 'px';
+        }
+      });
+    });
+  })();
+
+  // ---- Pricing monthly / yearly toggle ----
+  (function(){
+    var toggle = document.getElementById('priceToggle');
+    var monthlyLabel = document.getElementById('labelMonthly');
+    var yearlyLabel = document.getElementById('labelYearly');
+    var teamPrice = document.getElementById('teamPrice');
+    toggle.addEventListener('click', function(){
+      var yearly = toggle.classList.toggle('is-yearly');
+      monthlyLabel.classList.toggle('is-active', !yearly);
+      yearlyLabel.classList.toggle('is-active', yearly);
+      teamPrice.innerHTML = yearly
+        ? '$7<small>/user/mo</small>'
+        : '$9<small>/user/mo</small>';
+    });
+  })();
+</script>
+
+</body>
+</html>
